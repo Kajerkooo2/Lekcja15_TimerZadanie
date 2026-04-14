@@ -2,9 +2,11 @@ package com.example.timerzadanie;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.View;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.TextView;
+import android.app.AlertDialog;
+import android.graphics.Color;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,16 +14,18 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView textViewTimer;
-    private Button[] buttons;
-    private Random random;
-    private Handler handler;
-    private Runnable runnable;
-    private int currentNumber;
+    Button btnNr1, btnNr2, btnNr3, btnNr4, btnNr5;
+    TextView textViewTimer;
+    Handler handler;
+    Random random;
+    boolean gameRunning = true;
+    int score = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,46 +38,95 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-
+        btnNr1 = findViewById(R.id.btnNr1);
+        btnNr2 = findViewById(R.id.btnNr2);
+        btnNr3 = findViewById(R.id.btnNr3);
+        btnNr4 = findViewById(R.id.btnNr4);
+        btnNr5 = findViewById(R.id.btnNr5);
         textViewTimer = findViewById(R.id.textViewTimer);
-        buttons = new Button[] {
-                findViewById(R.id.btnNr1),
-                findViewById(R.id.btnNr2),
-                findViewById(R.id.btnNr3),
-                findViewById(R.id.btnNr4),
-                findViewById(R.id.btnNr5)
-        };
+
+        handler = new Handler(Looper.getMainLooper());
         random = new Random();
+        startTimer();
 
-        for (Button button : buttons) {
-            button.setText(String.valueOf(random.nextInt(10) + 1));
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (Integer.parseInt(((Button) v).getText().toString()) == currentNumber) {
-                        v.setEnabled(false);
-                        v.setBackgroundColor(getResources().getColor(android.R.color.holo_green_light));
-                    }
-                }
-            });
-        }
+        setUniqueButtonNumbers();
 
-        handler = new Handler();
-        runnable = new Runnable() {
+        btnNr1.setOnClickListener(v -> checkMatch(btnNr1));
+        btnNr2.setOnClickListener(v -> checkMatch(btnNr2));
+        btnNr3.setOnClickListener(v -> checkMatch(btnNr3));
+        btnNr4.setOnClickListener(v -> checkMatch(btnNr4));
+        btnNr5.setOnClickListener(v -> checkMatch(btnNr5));
+    }
+
+    private void startTimer() {
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                currentNumber = random.nextInt(10) + 1;
-                textViewTimer.setText(String.valueOf(currentNumber));
-                handler.postDelayed(this, 1000);
+                if (gameRunning) {
+                    int randomNumber = random.nextInt(10) + 1;
+                    textViewTimer.setText(String.valueOf(randomNumber));
+                    handler.postDelayed(this, 1000);
+                }
             }
-        };
-        handler.post(runnable);
+        }, 1000);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacks(runnable);
+    private void checkMatch(Button button) {
+        if (!button.isEnabled()) {
+            return;
+        }
+
+        int textViewValue = Integer.parseInt(textViewTimer.getText().toString());
+        int buttonValue = Integer.parseInt(button.getText().toString());
+
+        if (textViewValue == buttonValue) {
+            button.setBackgroundColor(Color.GREEN);
+            button.setEnabled(false);
+            score++;
+
+            if (score >= 3) {
+                endGame(true);
+            }
+        }
+        else {
+            button.setBackgroundColor(Color.RED);
+            button.setEnabled(false);
+
+            if (score < 3) {
+                endGame(false);
+            }
+        }
+    }
+
+    private void endGame(boolean isWin) {
+        gameRunning = false;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        if (isWin) {
+            builder.setTitle("WYGRALES");
+            builder.setMessage("Zdobyles " + score + "/5 punktów!\nGra została zatrzymana.");
+        } else {
+            builder.setTitle("PRZEGRALES");
+            builder.setMessage("Zdobyles tylko " + score + "/5 punktów.\nPotrzebujesz co najmniej 3 punktów do wygranej");
+        }
+
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.show();
+    }
+
+    private void setUniqueButtonNumbers() {
+        Set<Integer> usedNumbers = new HashSet<>();
+        Button[] buttons = {btnNr1, btnNr2, btnNr3, btnNr4, btnNr5};
+
+        for (Button button : buttons) {
+            int randomNumber;
+            do {
+                randomNumber = random.nextInt(10) + 1;
+            } while (usedNumbers.contains(randomNumber));
+
+            usedNumbers.add(randomNumber);
+            button.setText(String.valueOf(randomNumber));
+        }
     }
 }
-
