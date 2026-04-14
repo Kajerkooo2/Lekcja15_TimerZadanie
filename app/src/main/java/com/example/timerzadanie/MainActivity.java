@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     Random random;
     boolean gameRunning = true;
     int score = 0;
+    int attempts = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,21 +79,22 @@ public class MainActivity extends AppCompatActivity {
 
         int textViewValue = Integer.parseInt(textViewTimer.getText().toString());
         int buttonValue = Integer.parseInt(button.getText().toString());
+        attempts++;
 
         if (textViewValue == buttonValue) {
             button.setBackgroundColor(Color.GREEN);
-            button.setEnabled(false);
             score++;
+        } else {
+            button.setBackgroundColor(Color.RED);
+        }
 
+        button.setEnabled(false);
+
+
+        if (attempts == 5) {
             if (score >= 3) {
                 endGame(true);
-            }
-        }
-        else {
-            button.setBackgroundColor(Color.RED);
-            button.setEnabled(false);
-
-            if (score < 3) {
+            } else {
                 endGame(false);
             }
         }
@@ -100,18 +102,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void endGame(boolean isWin) {
         gameRunning = false;
+        handler.removeCallbacksAndMessages(null);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         if (isWin) {
-            builder.setTitle("WYGRALES");
-            builder.setMessage("Zdobyles " + score + "/5 punktów!\nGra została zatrzymana.");
+            builder.setTitle("KONIEC GRY - WYGRANA");
+            builder.setMessage("Gratulacje! Zdobyles " + score + "/5 punktów.");
         } else {
-            builder.setTitle("PRZEGRALES");
-            builder.setMessage("Zdobyles tylko " + score + "/5 punktów.\nPotrzebujesz co najmniej 3 punktów do wygranej");
+            builder.setTitle("KONIEC GRY - PRZEGRANA");
+            builder.setMessage("Niestety, zdobyles tylko " + score + "/5 punktów.\nPotrzebujesz co najmniej 3, aby wygrać.");
         }
 
         builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.setCancelable(false);
         builder.show();
     }
 
